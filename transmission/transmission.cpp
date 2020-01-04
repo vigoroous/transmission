@@ -81,9 +81,9 @@ int Server::recievemode() {
 	do {
 
 		//iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-		this->iResult = recv(this->ClientSocket, (char*)&apple, sizeof(apple), 0);
-		printf("%lf\n", apple.price);
-		printf("%i", apple.weight);
+		//this->iResult = recv(this->ClientSocket, (char*)&apple, sizeof(apple), 0);
+		//printf("%lf\n", apple.price);
+		//printf("%i", apple.weight);
 		if (this->iResult > 0) {
 			printf("Bytes received: %d\n", this->iResult);
 

@@ -1,6 +1,6 @@
 #include "readin.h"
 
-int readStream() {
+int readStream(char* path1, char* path2) {
 	//char buf[4194304]; /* массив для считываемых байт, но не символов! */
 	//size_t object = ;
 	char* buf = (char*)malloc(sizeof(size_t) * 4000000);          // динамическое выделение памяти под символьную строку
@@ -8,10 +8,14 @@ int readStream() {
 
 	FILE* in, * out;
 	size_t n_obj, out_obj;
-	in = fopen("file.bin", "rb");
-	if ((out = fopen("out.bin", "wb")) == NULL) {
+	//in = fopen(path1, "rb");
+	if ((in = fopen(path1, "rb")) == NULL) {
 		printf("Cannot open file.\n");
-		exit(1);
+		return 1;
+	}
+	if ((out = fopen(path2, "wb")) == NULL) {
+		printf("Cannot open file.\n");
+		return 1;
 	}
 
 	if (in != NULL)
@@ -31,4 +35,5 @@ int readStream() {
 		fclose(in); /* закроем файл */
 		free(buf);
 	}
+	return 0;
 }
