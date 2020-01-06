@@ -14,13 +14,14 @@
 // #pragma comment (lib, "Mswsock.lib")
 
 #define DEFAULT_BUFLEN 512
+#define DEFAULT_IP "192.168.1.95"
 #define DEFAULT_PORT "27015"
 
 class Server {
 public:
 	WSADATA wsaData;
 	int iResult;
-
+	
 	SOCKET ListenSocket = INVALID_SOCKET;
 	SOCKET ClientSocket = INVALID_SOCKET;
 
@@ -32,9 +33,9 @@ public:
 	int recvbuflen = DEFAULT_BUFLEN;
 
 
-	int setup();
+	int setup(char* ip, char* port);
 	int shutdownServer();
-	int recievemode();
+	int recievemode(const char* path);
 };
 
 class Client {
@@ -50,6 +51,7 @@ public:
 	int recvbuflen = DEFAULT_BUFLEN;
 
 
-	int setup(int argc, char** argv);
+	int setup(char* ip, char* port);
+	int sendfile(const char* path);
 	int shutdownClient();
 };

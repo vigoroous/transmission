@@ -1,6 +1,11 @@
+extern "C" {
+#include "readin.h"
+}
+
 #include "transmission.h"
 
-int Server::setup() {
+
+int Server::setup(char* ip, char* port) {
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0) {
 		printf("WSAStartup failed with error: %d\n", iResult);
@@ -14,7 +19,7 @@ int Server::setup() {
 	hints.ai_flags = AI_PASSIVE;
 
 	// Resolve the server address and port
-	iResult = getaddrinfo("192.168.1.95", DEFAULT_PORT, &hints, &result);
+	iResult = getaddrinfo(ip, port, &hints, &result);
 	if (iResult != 0) {
 		printf("getaddrinfo failed with error: %d\n", iResult);
 		WSACleanup();
@@ -77,16 +82,17 @@ int Server::shutdownServer() {
 	WSACleanup();
 }
 
-int Server::recievemode() {
+int Server::recievemode(const char* path) {
+	char* buf = (char*)malloc(sizeof(size_t) * 4000000);
 	do {
 
-		//iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-		//this->iResult = recv(this->ClientSocket, (char*)&apple, sizeof(apple), 0);
+		iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
+		this->iResult = recv(this->ClientSocket, buf, sizeof(size_t) * 4000000, 0);
 		//printf("%lf\n", apple.price);
 		//printf("%i", apple.weight);
 		if (this->iResult > 0) {
 			printf("Bytes received: %d\n", this->iResult);
-
+			write_to_file(path, buf, this->iResult);				//запись поноса в файл с сокета
 			// Echo the buffer back to the sender
 			this->iSendResult = send(this->ClientSocket, this->recvbuf, this->iResult, 0);
 			if (this->iSendResult == SOCKET_ERROR) {
@@ -111,12 +117,12 @@ int Server::recievemode() {
 	} while (this->iResult > 0);
 }
 
-int Client::setup(int argc, char** argv) {
+int Client::setup(char* ip, char* port) {
 	// Validate the parameters
-	if (argc != 2) {
-		printf("usage: %s server-name\n", argv[0]);
-		return 1;
-	}
+	//if (argc != 2) {
+	//	printf("usage: %s server-name\n", argv[0]);
+	//	return 1;
+	//}
 
 	// Initialize Winsock
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -131,7 +137,7 @@ int Client::setup(int argc, char** argv) {
 	hints.ai_protocol = IPPROTO_TCP;
 
 	// Resolve the server address and port
-	iResult = getaddrinfo(argv[1], DEFAULT_PORT, &hints, &result);
+	iResult = getaddrinfo(ip, port, &hints, &result);
 	if (iResult != 0) {
 		printf("getaddrinfo failed with error: %d\n", iResult);
 		WSACleanup();
@@ -167,6 +173,33 @@ int Client::setup(int argc, char** argv) {
 		WSACleanup();
 		return 1;
 	}
+}
+
+int Client::sendfile(const char* path) {
+	char* buf = (char*)malloc(sizeof(size_t) * 4000000);
+	int in_obj;
+	do {
+		in_obj = read_from_file(path, buf, sizeof(size_t) * 4000000);
+
+		this->iResult = send(this->ConnectSocket, buf, in_obj, 0);
+		if (this->iResult == SOCKET_ERROR) {
+			printf("send failed with error: %d\n", WSAGetLastError());
+			closesocket(this->ConnectSocket);
+			WSACleanup();
+			return 1;
+		}
+		this->iResult = recv(this->ConnectSocket, this->recvbuf, this->recvbuflen, 0);
+
+		if (this->iResult > 0) { printf("Bytes received: %d\n", this->iResult); }
+		else if (this->iResult == 0) { printf("Connection closed\n"); }
+		else { printf("recv failed with error: %d\n", WSAGetLastError()); }
+
+		//system("PAUSE");
+		if (in_obj == 0) { break; }
+	} while (this->iResult > 0);
+
+
+	printf("Bytes Sent: %ld\n", this->iResult);
 }
 
 int Client::shutdownClient() {
