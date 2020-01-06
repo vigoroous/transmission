@@ -1,14 +1,11 @@
 #include "readin.h"
 
-int copy_file(char* path1, char* path2) {
-	//char buf[4194304]; /* массив для считываемых байт, но не символов! */
-	//size_t object = ;
+int copy_file(char* path1, char* path2) {	
 	char* buf = (char*)malloc(sizeof(size_t) * 4000000);          // динамическое выделение памяти под символьную строку
-	//if (sizeof(buf) != object) exit(1);                       // если выделение памяти не выполнилось, завершить программу
+	if (buf == NULL) exit(1);                       // если выделение памяти не выполнилось, завершить программу
 
 	FILE* in, * out;
 	size_t n_obj, out_obj;
-	//in = fopen(path1, "rb");
 	if ((in = fopen(path1, "rb")) == NULL) {
 		printf("Cannot open file.\n");
 		return 1;
@@ -52,20 +49,4 @@ int write_to_file(const char* path, char* buf, size_t n_obj) {
 	fclose(out);
 
 	return out_obj;
-}
-int read_from_file(const char* path, char* buf, size_t n_obj) {
-
-	FILE* in;
-	size_t in_obj;
-
-	if ((in = fopen(path, "rb")) == NULL) {
-		printf("Cannot open file.\n");
-		return 1;
-	}
-
-	in_obj = fread(buf, sizeof(char), n_obj, in);
-
-	fclose(in);
-
-	return in_obj;
 }

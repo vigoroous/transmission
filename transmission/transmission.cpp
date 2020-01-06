@@ -84,18 +84,19 @@ int Server::shutdownServer() {
 
 int Server::recievemode(const char* path) {
 	char* buf = (char*)malloc(sizeof(size_t) * 4000000);
+	int out_obj;
 	do {
 
-		iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-		this->iResult = recv(this->ClientSocket, buf, sizeof(size_t) * 4000000, 0);
-		//printf("%lf\n", apple.price);
-		//printf("%i", apple.weight);
+		//iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
+		this->iResult = recv(this->ClientSocket, buf, 4000000, 0); //читаем с сокета в буферок
+		
 		if (this->iResult > 0) {
 			printf("Bytes received: %d\n", this->iResult);
-			write_to_file(path, buf, this->iResult);				//запись поноса в файл с сокета
+			out_obj = write_to_file(path, buf, this->iResult);				//запись поноса в файл с сокета
 			// Echo the buffer back to the sender
-			this->iSendResult = send(this->ClientSocket, this->recvbuf, this->iResult, 0);
+			this->iSendResult = send(this->ClientSocket, buf, out_obj, 0);
 			if (this->iSendResult == SOCKET_ERROR) {
+				free(buf);			//чистка
 				printf("send failed with error: %d\n", WSAGetLastError());
 				closesocket(this->ClientSocket);
 				WSACleanup();
@@ -103,27 +104,21 @@ int Server::recievemode(const char* path) {
 			}
 			printf("Bytes sent: %d\n", this->iSendResult);
 		}
-		else if (this->iResult == 0)
+		else if (this->iResult == 0) {
+			free(buf);			//чистка
 			printf("Connection closing...\n");
+		}
 		else {
+			free(buf);			//чистка
 			printf("recv failed with error: %d\n", WSAGetLastError());
 			closesocket(this->ClientSocket);
 			WSACleanup();
 			return 1;
 		}
-
-		//system("PAUSE");
-
 	} while (this->iResult > 0);
 }
 
 int Client::setup(char* ip, char* port) {
-	// Validate the parameters
-	//if (argc != 2) {
-	//	printf("usage: %s server-name\n", argv[0]);
-	//	return 1;
-	//}
-
 	// Initialize Winsock
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0) {
@@ -178,28 +173,34 @@ int Client::setup(char* ip, char* port) {
 int Client::sendfile(const char* path) {
 	char* buf = (char*)malloc(sizeof(size_t) * 4000000);
 	int in_obj;
+	long pos = 0;
 	do {
-		in_obj = read_from_file(path, buf, sizeof(size_t) * 4000000);
-
+		//читаем калл
+		in_obj = read_from_file(path, buf, 4000000, pos);
 		this->iResult = send(this->ConnectSocket, buf, in_obj, 0);
+
+		if (in_obj<4000000) { //пока оставил костыль
+			break;
+		}
+
 		if (this->iResult == SOCKET_ERROR) {
 			printf("send failed with error: %d\n", WSAGetLastError());
 			closesocket(this->ConnectSocket);
 			WSACleanup();
 			return 1;
 		}
-		this->iResult = recv(this->ConnectSocket, this->recvbuf, this->recvbuflen, 0);
+		this->iSendResult = recv(this->ConnectSocket, buf, this->iResult, 0);
 
-		if (this->iResult > 0) { printf("Bytes received: %d\n", this->iResult); }
-		else if (this->iResult == 0) { printf("Connection closed\n"); }
+		if (this->iSendResult > 0) { printf("Bytes received: %d\n", this->iSendResult); }
+		else if (this->iSendResult == 0) { printf("Connection closed\n"); }
 		else { printf("recv failed with error: %d\n", WSAGetLastError()); }
 
-		//system("PAUSE");
 		if (in_obj == 0) { break; }
 	} while (this->iResult > 0);
 
 
 	printf("Bytes Sent: %ld\n", this->iResult);
+	free(buf);
 }
 
 int Client::shutdownClient() {
@@ -213,4 +214,33 @@ int Client::shutdownClient() {
 	}
 	closesocket(ConnectSocket);
 	WSACleanup();
+}
+
+int read_from_file(const char* path, char* buf, size_t n_obj, long& pos) {
+
+	FILE* in;
+	size_t in_obj; //количество действительно прочитанных байт
+	int i;
+	printf("Hi.\n");
+
+	if ((in = fopen(path, "rb")) == NULL) {
+		printf("Cannot open file.\n");
+		return 1;
+	}
+
+	i = fseek(in, pos, SEEK_SET);
+
+	printf("%i%s", i, "\n");
+
+	in_obj = fread(buf, sizeof(char), n_obj, in);
+
+	printf("%i%s", in_obj, "\n");
+
+	pos = ftell(in);
+
+	printf("%l%s", pos, "\n");
+
+	fclose(in);
+
+	return in_obj;
 }

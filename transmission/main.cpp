@@ -9,6 +9,11 @@ using std::string;
 
 int main(int argc, char** argv)
 {
+	//argc = 4;
+	//argv[1] = strdup("connect");
+	//argv[2] = strdup("localhost");
+	//argv[3] = strdup("27015");
+
 	Server Simon;
 	Client ÑAJIO;
 	int flag = 0;

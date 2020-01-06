@@ -49,9 +49,11 @@ public:
 	char recvbuf[DEFAULT_BUFLEN];
 	int iResult;
 	int recvbuflen = DEFAULT_BUFLEN;
-
+	int iSendResult;
 
 	int setup(char* ip, char* port);
 	int sendfile(const char* path);
 	int shutdownClient();
 };
+
+int read_from_file(const char* path, char* buf, size_t n_obj, long& pos);
